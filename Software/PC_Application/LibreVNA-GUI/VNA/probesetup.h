@@ -38,6 +38,13 @@ public:
         Models = 1,      // reference models (air=1, water Debye, saltwater Cole-Cole) at the configured temperature
     };
 
+    // how the three standard files are selected
+    enum class Mode {
+        Files = 0,     // three individually selected files
+        Directory = 1, // resolved from a directory + temperature by filename convention
+        Probe = 2,     // an imported probe from the probe library + temperature
+    };
+
     // indices into files/standards
     static constexpr int Air = 0;
     static constexpr int Water = 1;
@@ -74,6 +81,21 @@ public:
     // known eps* (eps' - j*eps'') of a standard at freq [Hz], according to source (NaN if unavailable)
     static std::complex<double> knownEps(const std::array<Standard, 3> &standards, int standard,
                                          double freq, EpsSource source, double temperature);
+
+    // ===== probe library (imported stage-6 probe data) =====
+    // directory the imported probes live in (AppDataLocation/probes)
+    static QString probeLibraryDir();
+    // names of the probes in the library (subdirectory names)
+    static QStringList availableProbes();
+    // temperatures for which a directory contains a complete standard set,
+    // from the filename suffixes (sorted ascending)
+    static std::vector<double> availableTemperatures(const QString &dir);
+    // leading "! Key: value" metadata comments of a probe .s2p file
+    static std::map<QString, QString> readMetadata(const QString &path);
+    // Import a directory of stage-6 probe .s2p files into the library. The
+    // probe name is taken from the files' metadata (fallback: source
+    // directory name). Returns the imported probe name, empty on failure.
+    static QString importProbe(const QString &srcDir, QString &error);
 
     // shows the (non-modal) probe setup dialog
     void edit();
@@ -118,12 +140,14 @@ private:
     void loadFromSettings();
 
     // configuration
+    Mode mode;
     std::array<QString, 3> files;
     double temperature; // liquid temperature of the standards, degrees Celsius
     EpsSource epsSource;
     // directory mode: files[] is filled by resolving directory + temperature
-    bool directoryMode;
     QString directory;
+    // probe mode: like directory mode over probeLibraryDir()/probeName
+    QString probeName;
 
     // loaded state
     std::array<Standard, 3> standards;

@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 
 #include <cmath>
@@ -171,6 +172,58 @@ void ProbeSetupTests::exportRoundtrip()
     sampleMAE(reimported10, dataDir + "/Water/sim-P1-DI_water-30c.s2p", maeRe, maeIm);
     QVERIFY2(std::abs(maeRe - 2.1988) <= maeTolerance, qPrintable(QString::number(maeRe)));
     QVERIFY2(std::abs(maeIm - 10.5158) <= maeTolerance, qPrintable(QString::number(maeIm)));
+}
+
+void ProbeSetupTests::probeLibraryImport()
+{
+    // sandbox AppDataLocation so the user's real probe library is untouched
+    QStandardPaths::setTestModeEnabled(true);
+
+    // export a probe from the simulated data, import it into the library
+    QTemporaryDir exportDir;
+    QVERIFY(exportDir.isValid());
+    ProbeSetup ps;
+    ps.fromJSON(probeConfig(dataDir, 22.5, "fileColumns", true));
+    QString error;
+    QVERIFY2(ps.exportProbe(exportDir.path(), "P2sim", "unittest", error), qPrintable(error));
+
+    auto name = ProbeSetup::importProbe(exportDir.path(), error);
+    QVERIFY2(name == QString("P2sim"), qPrintable(name+" / "+error));
+    QVERIFY(ProbeSetup::availableProbes().contains("P2sim"));
+    auto probeDir = ProbeSetup::probeLibraryDir()+"/P2sim";
+    QCOMPARE(ProbeSetup::availableTemperatures(probeDir).size(), (size_t) 8);
+
+    // metadata of an imported file
+    auto meta = ProbeSetup::readMetadata(probeDir+"/P2sim-water-22p5c.s2p");
+    QCOMPARE(meta["Probe"], QString("P2sim"));
+    QCOMPARE(meta["Standard"], QString("water"));
+    QCOMPARE(meta["ThirdStandard"], QString("saltwater"));
+
+    // probe mode must reproduce the golden numbers
+    nlohmann::json j;
+    j["mode"] = "probe";
+    j["probe"] = "P2sim";
+    j["temperature"] = 22.5;
+    j["epsSource"] = "fileColumns";
+    ProbeSetup probe;
+    probe.fromJSON(j);
+    QVERIFY2(probe.valid(), qPrintable(probe.getLastError()));
+    double maeRe, maeIm;
+    sampleMAE(probe, dataDir + "/Water/sim-P1-DI_water-30c.s2p", maeRe, maeIm);
+    QVERIFY2(std::abs(maeRe - 0.6472) <= maeTolerance, qPrintable(QString::number(maeRe)));
+    QVERIFY2(std::abs(maeIm - 0.7541) <= maeTolerance, qPrintable(QString::number(maeIm)));
+
+    // switching the temperature must pick the matching embedded set
+    j["temperature"] = 10.0;
+    j["epsSource"] = "models";
+    ProbeSetup probe10;
+    probe10.fromJSON(j);
+    QVERIFY2(probe10.valid(), qPrintable(probe10.getLastError()));
+    sampleMAE(probe10, dataDir + "/Water/sim-P1-DI_water-30c.s2p", maeRe, maeIm);
+    QVERIFY2(std::abs(maeRe - 2.1988) <= maeTolerance, qPrintable(QString::number(maeRe)));
+    QVERIFY2(std::abs(maeIm - 10.5158) <= maeTolerance, qPrintable(QString::number(maeIm)));
+
+    QStandardPaths::setTestModeEnabled(false);
 }
 
 void ProbeSetupTests::computeOutsideCoverage()

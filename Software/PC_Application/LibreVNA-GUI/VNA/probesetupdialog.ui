@@ -36,6 +36,16 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QRadioButton" name="probeModeButton">
+       <property name="toolTip">
+        <string>Use an imported probe from the probe library: select the probe and the liquid temperature, the matching standard files are picked automatically.</string>
+       </property>
+       <property name="text">
+        <string>Probe</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -140,6 +150,90 @@
           </item>
          </layout>
         </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="probePage">
+      <layout class="QVBoxLayout" name="probePageLayout">
+       <item>
+        <widget class="QGroupBox" name="probeBox">
+         <property name="title">
+          <string>Probe</string>
+         </property>
+         <layout class="QFormLayout" name="probeFormLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="probeLabel">
+            <property name="text">
+             <string>Probe:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <layout class="QHBoxLayout" name="probeSelectLayout">
+            <item>
+             <widget class="QComboBox" name="probeCombo">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="toolTip">
+               <string>Probes imported into the probe library.</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="importProbeButton">
+              <property name="toolTip">
+               <string>Import a directory of exported probe data files into the probe library.</string>
+              </property>
+              <property name="text">
+               <string>Import probe...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="probeTemperatureLabel">
+            <property name="text">
+             <string>Temperature:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="probeTemperature">
+            <property name="toolTip">
+             <string>Liquid temperatures for which the probe contains a complete standard set.</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QLabel" name="probeInfo">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="probeSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>

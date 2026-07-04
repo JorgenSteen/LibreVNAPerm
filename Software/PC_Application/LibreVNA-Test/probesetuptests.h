@@ -20,6 +20,7 @@ private slots:
     void computeDirectoryMode10C();
     void computeOutsideCoverage();
     void exportRoundtrip();
+    void probeLibraryImport();
 
 private:
     QString dataDir;
