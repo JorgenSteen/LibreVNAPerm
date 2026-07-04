@@ -21,6 +21,7 @@ private slots:
     void computeOutsideCoverage();
     void exportRoundtrip();
     void probeLibraryImport();
+    void livePermittivityParameter();
 
 private:
     QString dataDir;

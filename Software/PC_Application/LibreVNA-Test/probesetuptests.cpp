@@ -1,12 +1,16 @@
 #include "probesetuptests.h"
 
 #include "VNA/probesetup.h"
+#include "VNA/vna.h"
+#include "appwindow.h"
+#include "modehandler.h"
 #include "touchstone.h"
 
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 
@@ -235,4 +239,104 @@ void ProbeSetupTests::computeOutsideCoverage()
     auto eps = ps.compute(50e6, std::complex<double>(0.5, -0.5));
     QVERIFY(std::isnan(eps.real()));
     QVERIFY(std::isnan(eps.imag()));
+}
+
+void ProbeSetupTests::livePermittivityParameter()
+{
+    // End-to-end test of the live PERMITTIVITY parameter: construct the
+    // full application (GUI hidden, see the test main), feed the sample
+    // sweep through VNA::NewDatapoint as if it came from a device and
+    // verify that a live PERMITTIVITY trace fills with the golden numbers.
+    auto window = new AppWindow;
+    auto cleanup = qScopeGuard([&](){ delete window; });
+
+    if(window->getDevice()) {
+        // a real device was auto-connected, its sweep would interfere
+        QMetaObject::invokeMethod(window, "DisconnectDevice", Qt::DirectConnection);
+        QTest::qWait(100);
+    }
+
+    auto vna = dynamic_cast<VNA*>(window->getModeHandler()->findFirstOfType(Mode::Type::VNA));
+    QVERIFY(vna);
+
+    // socketless SCPI console
+    QStringList output;
+    auto conn = connect(window->getSCPI(), &SCPI::output, [&](QString line){
+        output.append(line);
+    });
+    auto connCleanup = qScopeGuard([&](){ disconnect(conn); });
+    auto command = [&](const QString &cmd){
+        window->getSCPI()->input(cmd);
+        QTest::qWait(20);
+    };
+    auto query = [&](const QString &cmd) -> QString {
+        auto before = output.size();
+        window->getSCPI()->input(cmd);
+        for(int i = 0; i < 250 && output.size() == before; i++) {
+            QTest::qWait(20);
+        }
+        return output.size() > before ? output.last() : QString();
+    };
+
+    // the water-30c sample plays the role of the device measurements
+    auto samplePath = dataDir + "/Water/sim-P1-DI_water-30c.s2p";
+    auto sample = Touchstone::fromFile(samplePath.toStdString());
+    QVERIFY(sample.points() > 0);
+
+    command(":VNA:ACQ:POINTS "+QString::number(sample.points()));
+    QCOMPARE(query(":VNA:ACQ:POINTS?"), QString::number(sample.points()));
+    command(":VNA:TRAC:NEW live_eps");
+    command(":VNA:TRAC:PARAM live_eps PERMITTIVITY");
+    QCOMPARE(query(":VNA:TRAC:PARAM? live_eps"), QString("PERMITTIVITY"));
+    // let the configuration timer fire (no device -> changingSettings cleared)
+    QTest::qWait(300);
+
+    auto feedSweep = [&](){
+        for(unsigned int i = 0; i < sample.points(); i++) {
+            DeviceDriver::VNAMeasurement m;
+            m.pointNum = i;
+            m.Z0 = 50.0;
+            m.frequency = sample.point(i).frequency;
+            m.dBm = -10.0;
+            m.measurements["S11"] = sample.point(i).S[0];
+            QMetaObject::invokeMethod(vna, "NewDatapoint", Qt::DirectConnection,
+                                      Q_ARG(DeviceDriver::VNAMeasurement, m));
+        }
+        QTest::qWait(100);
+    };
+
+    // with an invalid probe setup nothing must be injected
+    nlohmann::json invalid = nlohmann::json::object();
+    invalid["mode"] = "files";
+    invalid["airFile"] = "";
+    invalid["waterFile"] = "";
+    invalid["saltwaterFile"] = "";
+    vna->getProbeSetup().fromJSON(invalid);
+    feedSweep();
+    auto raw = query(":VNA:TRAC:DATA? live_eps");
+    QVERIFY2(!raw.contains(','), "trace received data although the probe setup is invalid");
+
+    // with a valid probe setup the sweep must produce the golden numbers
+    vna->getProbeSetup().fromJSON(probeConfig(dataDir, 22.5, "fileColumns", false));
+    QVERIFY2(vna->getProbeSetup().valid(), qPrintable(vna->getProbeSetup().getLastError()));
+    feedSweep();
+    raw = query(":VNA:TRAC:DATA? live_eps");
+
+    std::vector<TraceMath::Data> truth; // eps' - j*eps'' from the sample's Perm columns
+    QVERIFY(ProbeSetup::loadPermColumns(samplePath, truth));
+    // parse "[freq,re,im],[freq,re,im],..."
+    auto points = raw.split("],[");
+    QCOMPARE((unsigned int) points.size(), sample.points());
+    double maeRe = 0.0, maeIm = 0.0;
+    for(int i = 0; i < points.size(); i++) {
+        auto fields = points[i].remove('[').remove(']').split(',');
+        QCOMPARE(fields.size(), 3);
+        QVERIFY(std::abs(fields[0].toDouble() - truth[i].x) < 1.0);
+        maeRe += std::abs(fields[1].toDouble() - truth[i].y.real());
+        maeIm += std::abs(fields[2].toDouble() - (-truth[i].y.imag()));
+    }
+    maeRe /= points.size();
+    maeIm /= points.size();
+    QVERIFY2(std::abs(maeRe - 0.6472) <= maeTolerance, qPrintable(QString::number(maeRe)));
+    QVERIFY2(std::abs(maeIm - 0.7541) <= maeTolerance, qPrintable(QString::number(maeIm)));
 }

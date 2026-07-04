@@ -44,6 +44,8 @@ public:
     QList<QAction*> getImportOptions() override { return importActions;}
     QList<QAction*> getExportOptions() override { return exportActions;}
 
+    ProbeSetup &getProbeSetup() { return probeSetup;}
+
     enum class SweepType {
         Frequency = 0,
         Power = 1,

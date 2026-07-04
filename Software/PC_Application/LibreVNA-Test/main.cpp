@@ -10,7 +10,15 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    // Some tests construct an AppWindow, which parses the application
+    // arguments (and exits on options it does not know, like the QTest
+    // ones). Give the application a fixed argument list with the GUI
+    // disabled and keep the real one for the test framework.
+    static int appArgc = 2;
+    static char appName[] = "LibreVNA-Test";
+    static char appNoGui[] = "--no-gui";
+    static char *appArgv[] = {appName, appNoGui, nullptr};
+    QApplication a(appArgc, appArgv);
 
     int status = 0;
     status |= QTest::qExec(new UtilTests, argc, argv);
