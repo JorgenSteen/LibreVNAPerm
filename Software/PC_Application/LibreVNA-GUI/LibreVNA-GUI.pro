@@ -154,6 +154,7 @@ HEADERS += \
     VNA/Deembedding/matchingnetwork.h \
     VNA/Deembedding/portextension.h \
     VNA/Deembedding/twothru.h \
+    VNA/probesetup.h \
     VNA/tracewidgetvna.h \
     VNA/vna.h \
     about.h \
@@ -314,6 +315,7 @@ SOURCES += \
     VNA/Deembedding/matchingnetwork.cpp \
     VNA/Deembedding/portextension.cpp \
     VNA/Deembedding/twothru.cpp \
+    VNA/probesetup.cpp \
     VNA/tracewidgetvna.cpp \
     VNA/vna.cpp \
     about.cpp \
@@ -422,6 +424,7 @@ FORMS += \
     VNA/Deembedding/measurementdialog.ui \
     VNA/Deembedding/portextensioneditdialog.ui \
     VNA/Deembedding/twothrudialog.ui \
+    VNA/probesetupdialog.ui \
     VNA/s2pImportOptions.ui \
     aboutdialog.ui \
     main.ui \

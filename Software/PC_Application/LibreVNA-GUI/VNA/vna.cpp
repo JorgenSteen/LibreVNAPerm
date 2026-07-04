@@ -171,6 +171,12 @@ VNA::VNA(AppWindow *window, QString name)
         }
     });
 
+    calMenu->addSeparator();
+    auto probeSetupAction = calMenu->addAction("Probe setup...");
+    connect(probeSetupAction, &QAction::triggered, [=](){
+        probeSetup.edit();
+    });
+
     cal.getKit().setIdealDefault();
 
     calDialog = new QProgressDialog();
@@ -897,6 +903,7 @@ nlohmann::json VNA::toJSON()
     j["markers"] = markerModel->toJSON();
     j["de-embedding"] = deembedding.toJSON();
     j["de-embedding_enabled"] = deembedding_active;
+    j["probe"] = probeSetup.toJSON();
     return j;
 }
 
@@ -919,6 +926,9 @@ void VNA::fromJSON(nlohmann::json j)
         EnableDeembedding(j.value("de-embedding_enabled", true));
     } else {
         EnableDeembedding(false);
+    }
+    if(j.contains("probe")) {
+        probeSetup.fromJSON(j["probe"]);
     }
 
     // sweep configuration has to go last so graphs can catch events from changed sweep

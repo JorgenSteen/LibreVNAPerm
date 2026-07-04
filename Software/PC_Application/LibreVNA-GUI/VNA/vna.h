@@ -8,6 +8,7 @@
 #include "scpi.h"
 #include "tracewidgetvna.h"
 #include "Calibration/calibration.h"
+#include "probesetup.h"
 
 #include <QObject>
 #include <QWidget>
@@ -165,6 +166,8 @@ private:
 
     // Calibration
     Calibration cal;
+    // Dielectric probe configuration (permittivity measurements)
+    ProbeSetup probeSetup;
     bool changingSettings;
     std::set<CalibrationMeasurement::Base*> calMeasurements;
     bool calMeasuring;

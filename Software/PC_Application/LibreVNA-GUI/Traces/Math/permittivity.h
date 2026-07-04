@@ -3,6 +3,7 @@
 
 #include "tracemath.h"
 #include "permittivitymath.h"
+#include "VNA/probesetup.h"
 
 #include <array>
 
@@ -15,7 +16,9 @@ namespace Math {
  * The chained input is the SAMPLE's S11 (frequency domain, linear complex).
  * The three calibration standards (open/air, water, saltwater) come from
  * touchstone files configured on the operation, together with the liquid
- * temperature and the source of the standards' known eps*.
+ * temperature and the source of the standards' known eps*. The
+ * loading/resolution code is shared with the central probe setup
+ * (VNA/probesetup.h), this operation is the offline/file-trace path.
  *
  * SIGN CONVENTION OF THE OUTPUT (important):
  * The math internally uses the physics/lossy convention eps* = eps' - j*eps''
@@ -30,25 +33,13 @@ public:
     Permittivity();
 
     // where the known eps* of the standards comes from
-    enum class EpsSource {
-        FileColumns = 0, // Perm_Real/Perm_Imag columns of the standard files (custom format)
-        Models = 1,      // reference models (air=1, water Debye, saltwater Cole-Cole) at the configured temperature
-    };
+    using EpsSource = ProbeSetup::EpsSource;
 
     DataType outputType(DataType inputType) override;
     QString description() override;
     void edit() override;
     static QWidget *createExplanationWidget();
 
-    // Directory mode: find the three standard files in a directory (searched
-    // recursively) by filename convention. The air standard contains "open"
-    // (but not "short") in its name; water/saltwater contain "water" /
-    // "salt" and must carry a temperature suffix matching tempC, e.g.
-    // "-22p5c" for 22.5 degrees. Returns false and sets error on failure.
-    static bool resolveStandardsFromDirectory(const QString &dir, double tempC,
-                                              std::array<QString, 3> &resolved, QString &error);
-    // temperature -> filename suffix, e.g. 22.5 -> "22p5c", 10 -> "10c"
-    static QString temperatureSuffix(double tempC);
     nlohmann::json toJSON() override;
     void fromJSON(nlohmann::json j) override;
     Type getType() override {return Type::Permittivity;}
@@ -58,22 +49,14 @@ public slots:
 
 private:
     // indices into files/standards
-    static constexpr int Air = 0;
-    static constexpr int Water = 1;
-    static constexpr int Saltwater = 2;
-    static const char *standardName(int standard);
-
-    struct Standard {
-        std::vector<Data> gamma; // measured S11 (linear complex) vs frequency [Hz]
-        std::vector<Data> perm;  // known eps* from the file's Perm columns, as eps' - j*eps''; empty if the file has none
-    };
+    static constexpr int Air = ProbeSetup::Air;
+    static constexpr int Water = ProbeSetup::Water;
+    static constexpr int Saltwater = ProbeSetup::Saltwater;
 
     // (re)load all three standard files, returns false and sets loadError on failure
     bool loadStandards();
     // force a reload + recompute after the configuration changed
     void configurationChanged();
-    // known eps* of a standard at freq [Hz], according to epsSource (NaN if unavailable)
-    std::complex<double> knownEps(int standard, double freq);
 
     std::array<QString, 3> files;
     double temperature; // liquid temperature of the standards, degrees Celsius
@@ -82,7 +65,7 @@ private:
     bool directoryMode;
     QString directory;
 
-    std::array<Standard, 3> standards;
+    std::array<ProbeSetup::Standard, 3> standards;
     bool standardsLoaded;
     QString loadError;
     // per-output-sample condition number of the calibration solve (NaN where invalid)
