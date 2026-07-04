@@ -819,6 +819,10 @@ bool Trace::isVNAParameter(QString param)
         // raw receiver value
         return true;
     }
+    if(param == "PERMITTIVITY") {
+        // live permittivity computed from S11 via the probe setup
+        return true;
+    }
     return false;
 }
 

@@ -69,6 +69,8 @@ SOURCES +=  \
     ../LibreVNA-GUI/Traces/Math/dft.cpp \
     ../LibreVNA-GUI/Traces/Math/expression.cpp \
     ../LibreVNA-GUI/Traces/Math/medianfilter.cpp \
+    ../LibreVNA-GUI/Traces/Math/permittivity.cpp \
+    ../LibreVNA-GUI/Traces/Math/permittivitymath.cpp \
     ../LibreVNA-GUI/Traces/Math/parser/mpError.cpp \
     ../LibreVNA-GUI/Traces/Math/parser/mpFuncCmplx.cpp \
     ../LibreVNA-GUI/Traces/Math/parser/mpFuncCommon.cpp \
@@ -144,6 +146,7 @@ SOURCES +=  \
     ../LibreVNA-GUI/VNA/Deembedding/matchingnetwork.cpp \
     ../LibreVNA-GUI/VNA/Deembedding/portextension.cpp \
     ../LibreVNA-GUI/VNA/Deembedding/twothru.cpp \
+    ../LibreVNA-GUI/VNA/probesetup.cpp \
     ../LibreVNA-GUI/VNA/tracewidgetvna.cpp \
     ../LibreVNA-GUI/VNA/vna.cpp \
     ../LibreVNA-GUI/about.cpp \
@@ -167,6 +170,7 @@ SOURCES +=  \
     main.cpp \
     parametertests.cpp \
     portextensiontests.cpp \
+    probesetuptests.cpp \
     utiltests.cpp
 
 HEADERS += \
@@ -263,6 +267,8 @@ HEADERS += \
     ../LibreVNA-GUI/Traces/Math/dft.h \
     ../LibreVNA-GUI/Traces/Math/expression.h \
     ../LibreVNA-GUI/Traces/Math/medianfilter.h \
+    ../LibreVNA-GUI/Traces/Math/permittivity.h \
+    ../LibreVNA-GUI/Traces/Math/permittivitymath.h \
     ../LibreVNA-GUI/Traces/Math/parser/mpCompat.h \
     ../LibreVNA-GUI/Traces/Math/parser/mpDefines.h \
     ../LibreVNA-GUI/Traces/Math/parser/mpError.h \
@@ -349,6 +355,7 @@ HEADERS += \
     ../LibreVNA-GUI/VNA/Deembedding/matchingnetwork.h \
     ../LibreVNA-GUI/VNA/Deembedding/portextension.h \
     ../LibreVNA-GUI/VNA/Deembedding/twothru.h \
+    ../LibreVNA-GUI/VNA/probesetup.h \
     ../LibreVNA-GUI/VNA/tracewidgetvna.h \
     ../LibreVNA-GUI/VNA/vna.h \
     ../LibreVNA-GUI/about.h \
@@ -372,6 +379,7 @@ HEADERS += \
     impedancerenormalizationtests.h \
     parametertests.h \
     portextensiontests.h \
+    probesetuptests.h \
     utiltests.h
 
 INCLUDEPATH += \
@@ -428,6 +436,8 @@ FORMS += \
     ../LibreVNA-GUI/Traces/Math/medianexplanationwidget.ui \
     ../LibreVNA-GUI/Traces/Math/medianfilterdialog.ui \
     ../LibreVNA-GUI/Traces/Math/newtracemathdialog.ui \
+    ../LibreVNA-GUI/Traces/Math/permittivitydialog.ui \
+    ../LibreVNA-GUI/Traces/Math/permittivityexplanationwidget.ui \
     ../LibreVNA-GUI/Traces/Math/tdrdialog.ui \
     ../LibreVNA-GUI/Traces/Math/tdrexplanationwidget.ui \
     ../LibreVNA-GUI/Traces/Math/timedomaingatingexplanationwidget.ui \
@@ -452,6 +462,7 @@ FORMS += \
     ../LibreVNA-GUI/VNA/Deembedding/measurementdialog.ui \
     ../LibreVNA-GUI/VNA/Deembedding/portextensioneditdialog.ui \
     ../LibreVNA-GUI/VNA/Deembedding/twothrudialog.ui \
+    ../LibreVNA-GUI/VNA/probesetupdialog.ui \
     ../LibreVNA-GUI/VNA/s2pImportOptions.ui \
     ../LibreVNA-GUI/aboutdialog.ui \
     ../LibreVNA-GUI/main.ui \

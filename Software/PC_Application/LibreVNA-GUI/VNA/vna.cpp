@@ -1065,6 +1065,15 @@ void VNA::NewDatapoint(DeviceDriver::VNAMeasurement m)
 
     cal.correctMeasurement(m_avg);
 
+    // Live permittivity parameter: computed per point from the (corrected)
+    // S11 via the probe setup. Stored as eps' + j*eps'' (display convention).
+    auto injectPermittivity = [this](DeviceDriver::VNAMeasurement &m) {
+        if(m.measurements.count("S11") && probeSetup.valid()) {
+            m.measurements["PERMITTIVITY"] = probeSetup.compute(m.frequency, m.measurements.at("S11"));
+        }
+    };
+    injectPermittivity(m_avg);
+
     if(cal.getCaltype().type != Calibration::Type::None) {
         window->addStreamingData(m_avg, AppWindow::VNADataType::Calibrated, settings.zerospan);
     }
@@ -1072,6 +1081,8 @@ void VNA::NewDatapoint(DeviceDriver::VNAMeasurement m)
     traceModel.addVNAData(m_avg, type, false);
     if(deembedding_active) {
         deembedding.Deembed(m_avg);
+        // recompute from the de-embedded S11
+        injectPermittivity(m_avg);
         window->addStreamingData(m_avg, AppWindow::VNADataType::Deembedded, settings.zerospan);
         traceModel.addVNAData(m_avg, type, true);
     }

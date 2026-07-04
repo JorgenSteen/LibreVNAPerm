@@ -131,6 +131,8 @@ TraceEditDialog::TraceEditDialog(Trace &t, QWidget *parent) :
     if(DeviceDriver::getActiveDriver()) {
         if(VNAtrace) {
             ui->CLiveParam->addItems(DeviceDriver::getActiveDriver()->availableVNAMeasurements());
+            // computed live parameter, available in addition to the S parameters (see VNA::NewDatapoint)
+            ui->CLiveParam->addItem("PERMITTIVITY");
         } else {
             ui->CLiveParam->addItems(DeviceDriver::getActiveDriver()->availableSAMeasurements());
         }

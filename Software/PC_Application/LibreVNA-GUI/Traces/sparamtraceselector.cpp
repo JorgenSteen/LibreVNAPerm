@@ -61,6 +61,10 @@ void SparamTraceSelector::setInitialChoices()
                 // only frequency domain traces allowed
                 continue;
             }
+            if(t->getSource() == Trace::Source::Live && t->liveParameter() == "PERMITTIVITY") {
+                // permittivity is not an S parameter, not usable here
+                continue;
+            }
             if(t->size() == 0) {
                 // can't select empty traces
                 continue;
