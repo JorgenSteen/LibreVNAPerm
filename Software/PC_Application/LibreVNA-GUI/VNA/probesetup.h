@@ -77,6 +77,20 @@ public:
 
     // shows the (non-modal) probe setup dialog
     void edit();
+    // "Export custom probe data": asks for probe name + destination
+    // directory, then runs exportProbe. device = serial of the connected
+    // device (empty if none), recorded in the file metadata.
+    void exportDialog(const QString &device);
+    // Export the configured probe into destDir: each standard is written as
+    // an augmented Touchstone .s2p in the same column layout the simulated
+    // data set uses (freq, S11 re/im, Perm re/im, 4 filler columns -- a
+    // valid 2-port Touchstone file), plus probe/device metadata comment
+    // lines. In directory mode every temperature found in the source
+    // directory is exported, in individual mode the three configured files.
+    // The written files resolve/load again through the directory mode (the
+    // probe name must not contain "open"/"short"/"water"/"salt", they would
+    // confuse the filename classification).
+    bool exportProbe(const QString &destDir, const QString &probeName, const QString &device, QString &error);
     // true if the configured standards can be (and are) loaded
     bool valid();
     // permittivity of a sample with reflection coefficient S11 (linear
@@ -92,6 +106,10 @@ signals:
     void settingsChanged();
 
 private:
+    // write one standard as an augmented Touchstone .s2p (see exportProbe)
+    static bool writeStandardFile(const QString &path, int standard, double tempC,
+                                  const QString &probeName, const QString &device,
+                                  const Standard &data, EpsSource source, QString &error);
     bool ensureLoaded();
     // invalidate loaded standards + coefficient cache after a config change
     void invalidate();

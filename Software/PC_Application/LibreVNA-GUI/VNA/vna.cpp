@@ -640,6 +640,12 @@ VNA::VNA(AppWindow *window, QString name)
     connect(exportCSV, &QAction::triggered, traceWidget, &TraceWidgetVNA::exportCSV);
     exportActions.push_back(exportCSV);
 
+    auto exportProbeData = new QAction("Custom probe data...");
+    connect(exportProbeData, &QAction::triggered, [=](){
+        probeSetup.exportDialog(window->getDevice() ? window->getDevice()->getSerial() : QString());
+    });
+    exportActions.push_back(exportProbeData);
+
 
     auto markerWidget = new MarkerWidget(*markerModel);
 

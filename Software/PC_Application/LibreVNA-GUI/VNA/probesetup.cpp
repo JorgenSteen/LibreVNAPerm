@@ -3,17 +3,21 @@
 #include "touchstone.h"
 #include "appwindow.h"
 #include "preferences.h"
+#include "CustomWidgets/informationbox.h"
 #include "ui_probesetupdialog.h"
 
 #include <QDialog>
 #include <QDirIterator>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QInputDialog>
+#include <QRegularExpression>
 #include <QSettings>
 
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <set>
 #include <sstream>
 
 using namespace std;
@@ -280,6 +284,164 @@ void ProbeSetup::edit()
     if(AppWindow::showGUI()) {
         d->show();
     }
+}
+
+void ProbeSetup::exportDialog(const QString &device)
+{
+    bool ok = false;
+    QString name = QInputDialog::getText(nullptr, "Export custom probe data",
+                                         "Probe name (must not contain open/short/water/salt):",
+                                         QLineEdit::Normal, "Probe1", &ok);
+    if(!ok || name.isEmpty()) {
+        return;
+    }
+    auto dir = QFileDialog::getExistingDirectory(nullptr, "Select destination directory for the probe data",
+                                                 Preferences::getInstance().UISettings.Paths.data,
+                                                 QFileDialog::ShowDirsOnly | Preferences::QFileDialogOptions());
+    if(dir.isEmpty()) {
+        return;
+    }
+    QString error;
+    if(exportProbe(dir, name, device, error)) {
+        InformationBox::ShowMessage("Export custom probe data", "Probe data exported to "+dir);
+    } else {
+        InformationBox::ShowError("Export custom probe data", error);
+    }
+}
+
+bool ProbeSetup::exportProbe(const QString &destDir, const QString &probeName, const QString &device, QString &error)
+{
+    if(probeName.isEmpty()) {
+        error = "No probe name given";
+        return false;
+    }
+    const QString lower = probeName.toLower();
+    for(const auto &token : {"open", "short", "water", "salt"}) {
+        if(lower.contains(token)) {
+            error = QString("The probe name must not contain \"")+token+"\", it would confuse the standard classification by filename";
+            return false;
+        }
+    }
+    QDir dest(destDir);
+    if(!dest.exists()) {
+        error = "Destination directory does not exist: "+destDir;
+        return false;
+    }
+    QString base = probeName;
+    base.replace(QRegularExpression("[^A-Za-z0-9._-]+"), "_");
+
+    // the temperatures to export: every one found in the source directory
+    // (directory mode) or the single configured one (individual files)
+    vector<double> temps;
+    if(directoryMode) {
+        QRegularExpression tempRe("-(\\d+(?:p\\d+)?)c$");
+        set<double> found;
+        QDirIterator it(directory, {"*.s1p", "*.s2p"}, QDir::Files, QDirIterator::Subdirectories);
+        while(it.hasNext()) {
+            auto match = tempRe.match(QFileInfo(it.next()).completeBaseName().toLower());
+            if(match.hasMatch()) {
+                found.insert(QString(match.captured(1)).replace('p', '.').toDouble());
+            }
+        }
+        temps.assign(found.begin(), found.end());
+        if(temps.empty()) {
+            error = "No temperature-suffixed standard files found in "+directory;
+            return false;
+        }
+    } else {
+        temps.push_back(temperature);
+    }
+
+    bool airWritten = false;
+    unsigned int exported = 0;
+    for(auto temp : temps) {
+        std::array<QString, 3> src = files;
+        std::array<Standard, 3> stds;
+        if(directoryMode && !resolveStandardsFromDirectory(directory, temp, src, error)) {
+            // no complete standard set at this temperature
+            continue;
+        }
+        if(!loadStandardFiles(src, stds, error)) {
+            return false;
+        }
+        if(!airWritten) {
+            if(!writeStandardFile(dest.filePath(base+"-open.s2p"), Air, temp, probeName, device, stds[Air], epsSource, error)) {
+                return false;
+            }
+            airWritten = true;
+        }
+        const QString suffix = temperatureSuffix(temp);
+        if(!writeStandardFile(dest.filePath(base+"-water-"+suffix+".s2p"), Water, temp, probeName, device, stds[Water], epsSource, error)
+                || !writeStandardFile(dest.filePath(base+"-saltwater-"+suffix+".s2p"), Saltwater, temp, probeName, device, stds[Saltwater], epsSource, error)) {
+            return false;
+        }
+        exported++;
+    }
+    if(!exported) {
+        // error still holds the last resolution failure
+        error = "No complete standard set found to export ("+error+")";
+        return false;
+    }
+    return true;
+}
+
+bool ProbeSetup::writeStandardFile(const QString &path, int standard, double tempC,
+                                   const QString &probeName, const QString &device,
+                                   const Standard &data, EpsSource source, QString &error)
+{
+    ofstream file(path.toStdString());
+    if(!file.is_open()) {
+        error = "Unable to create "+path;
+        return false;
+    }
+    // Metadata as leading comment lines, then the column-naming info line
+    // and the standard Touchstone option line. The data rows keep the
+    // 9-column layout of the simulated data set: with 8 values per
+    // frequency the file stays a valid 2-port Touchstone file (S11 in the
+    // first data columns), the Perm columns ride in the S21 slot and the
+    // remaining columns are unused filler.
+    QString header;
+    header += "! LibreVNA custom probe data\n";
+    header += "! Probe: "+probeName+"\n";
+    if(!device.isEmpty()) {
+        header += "! Device: "+device+"\n";
+    }
+    header += QString("! Standard: ")+standardName(standard)+"\n";
+    if(standard != Air) {
+        header += "! Temperature: "+QString::number(tempC)+"\n";
+    }
+    header += QString("! ThirdStandard: ")+standardName(Saltwater)+"\n";
+    header += "! S-Parameter data: F S11 e\n";
+    header += "!   Frequency\tS11_Real\tS11_Imag\tPerm_Real\tPerm_Imag\tUnused\tUnused\tUnused\tUnused\n";
+    header += "# Hz S RI R 50\n";
+    file << header.toStdString();
+    for(const auto &g : data.gamma) {
+        complex<double> eps;
+        switch(source) {
+        case EpsSource::FileColumns:
+            eps = interpolateOrNaN(data.perm, g.x);
+            break;
+        case EpsSource::Models:
+            switch(standard) {
+            case Air: eps = PermittivityMath::airPermittivity(); break;
+            case Water: eps = PermittivityMath::waterDebye(g.x, tempC); break;
+            case Saltwater: eps = PermittivityMath::saltwaterColeCole(g.x, tempC); break;
+            }
+            break;
+        }
+        if(isnan(eps.real())) {
+            error = QString("No known eps* for the ")+standardName(standard)+" standard at "+QString::number(g.x)+" Hz (missing Perm columns?)";
+            return false;
+        }
+        // Perm_Imag is stored positive in the file (internally eps* = eps' - j*eps'')
+        file << QString::asprintf("%.9E\t%.9E\t%.9E\t%.9E\t%.9E\t0\t0\t0\t0\n",
+                                  g.x, g.y.real(), g.y.imag(), eps.real(), -eps.imag()).toStdString();
+    }
+    if(!file.good()) {
+        error = "Write error on "+path;
+        return false;
+    }
+    return true;
 }
 
 bool ProbeSetup::valid()

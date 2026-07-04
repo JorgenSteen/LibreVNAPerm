@@ -19,6 +19,7 @@ private slots:
     void computeModels();
     void computeDirectoryMode10C();
     void computeOutsideCoverage();
+    void exportRoundtrip();
 
 private:
     QString dataDir;
