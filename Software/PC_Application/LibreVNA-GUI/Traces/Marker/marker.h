@@ -53,6 +53,8 @@ public:
         Flatness,
         maxDeltaPos,
         maxDeltaNeg,
+        // permittivity traces (eps' + j*eps'')
+        Permittivity,
         // keep last at end
         Last,
     };

@@ -143,6 +143,7 @@ QString Marker::formatToString(Marker::Format f)
     case Format::Flatness: return "Flatness";
     case Format::maxDeltaNeg: return "Max. Delta Negative";
     case Format::maxDeltaPos: return "Max. Delta Positive";
+    case Format::Permittivity: return "Permittivity";
     case Format::Last: return "";
     }
     return "";
@@ -195,7 +196,10 @@ std::vector<Marker::Format> Marker::applicableFormats()
         case Type::Delta:
         case Type::Maximum:
         case Type::Minimum:
-            if(Trace::isSAParameter(parentTrace->liveParameter())) {
+            if(parentTrace && parentTrace->isPermittivity()) {
+                // trace data is eps' + j*eps'', the S parameter formats make no sense
+                ret.push_back(Format::Permittivity);
+            } else if(Trace::isSAParameter(parentTrace->liveParameter())) {
                 ret.push_back(Format::dBm);
                 ret.push_back(Format::dBuV);
             } else {
@@ -231,7 +235,10 @@ std::vector<Marker::Format> Marker::applicableFormats()
         case Type::Delta:
         case Type::Maximum:
         case Type::Minimum:
-            if(Trace::isSAParameter(parentTrace->liveParameter())) {
+            if(parentTrace && parentTrace->isPermittivity()) {
+                // trace data is eps' + j*eps'', the S parameter formats make no sense
+                ret.push_back(Format::Permittivity);
+            } else if(Trace::isSAParameter(parentTrace->liveParameter())) {
                 ret.push_back(Format::dBm);
                 ret.push_back(Format::dBuV);
             } else {
@@ -294,9 +301,14 @@ std::vector<Marker::Format> Marker::applicableFormats()
         case Type::Delta:
         case Type::Maximum:
         case Type::Minimum:
-            ret.push_back(Format::dB);
-            ret.push_back(Format::dBAngle);
-            ret.push_back(Format::RealImag);
+            if(parentTrace && parentTrace->isPermittivity()) {
+                // trace data is eps' + j*eps'', the S parameter formats make no sense
+                ret.push_back(Format::Permittivity);
+            } else {
+                ret.push_back(Format::dB);
+                ret.push_back(Format::dBAngle);
+                ret.push_back(Format::RealImag);
+            }
             if(parentTrace) {
                 if(parentTrace->isReflection()) {
                     ret.push_back(Format::Impedance);
@@ -394,6 +406,8 @@ std::vector<Marker::Format> Marker::defaultActiveFormats()
     if(pref.Marker.defaultBehavior.showMaxDeltaPos) {
         ret.push_back(Format::maxDeltaPos);
     }
+    // only ever applicable for permittivity traces, no preference needed
+    ret.push_back(Format::Permittivity);
     return ret;
 }
 
@@ -493,6 +507,7 @@ QString Marker::readableData(Format f)
             case Format::Capacitance: return "Δ:"+Unit::ToString(Util::SparamToCapacitance(data, position, trace()->getReferenceImpedance()) - Util::SparamToCapacitance(delta->data, delta->position, trace()->getReferenceImpedance()), "F", "pnum ", 4);
             case Format::Inductance: return "Δ:"+Unit::ToString(Util::SparamToInductance(data, position, trace()->getReferenceImpedance()) - Util::SparamToInductance(delta->data, delta->position, trace()->getReferenceImpedance()), "H", "pnum ", 4);
             case Format::QualityFactor: return "ΔQ:" + Unit::ToString(Util::SparamToQualityFactor(data) - Util::SparamToQualityFactor(delta->data), "", " ", 3);
+            case Format::Permittivity: return "Δε':"+Unit::ToString(data.real() - delta->data.real(), "", " ", 4)+" Δε'':"+Unit::ToString(data.imag() - delta->data.imag(), "", " ", 4);
             case Format::GroupDelay: return "Δτg:"+Unit::ToString(trace()->getGroupDelay(position) - delta->trace()->getGroupDelay(delta->position), "s", "pnum ", 4);
             case Format::Noise: return "Δ:"+Unit::ToString(parentTrace->getNoise(position) - delta->parentTrace->getNoise(delta->position), "dbm/Hz", " ", 3);
             default: return "Invalid";
@@ -518,6 +533,7 @@ QString Marker::readableData(Format f)
             case Format::Capacitance: return Unit::ToString(Util::SparamToCapacitance(data, position, trace()->getReferenceImpedance()), "F", "pnum ", 4);
             case Format::Inductance: return Unit::ToString(Util::SparamToInductance(data, position, trace()->getReferenceImpedance()), "H", "pnum ", 4);
             case Format::QualityFactor: return "Q:" + Unit::ToString(Util::SparamToQualityFactor(data), "", " ", 3);
+            case Format::Permittivity: return "ε':"+Unit::ToString(data.real(), "", " ", 4)+" ε'':"+Unit::ToString(data.imag(), "", " ", 4);
             case Format::GroupDelay: return "τg:"+Unit::ToString(trace()->getGroupDelay(position), "s", "pnum ", 4);
             case Format::Noise: return Unit::ToString(parentTrace->getNoise(position), "dbm/Hz", " ", 3);
             case Format::TOI: {
