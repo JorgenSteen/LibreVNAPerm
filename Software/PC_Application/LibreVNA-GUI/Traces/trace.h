@@ -68,6 +68,10 @@ public:
     LivedataType liveType() { return _liveType; }
     TraceMath::DataType outputType() const { return lastMath->getDataType(); }
     TraceMath *getLastMath() { return lastMath;}
+    // true if the trace data is a complex permittivity (eps' + j*eps'')
+    // instead of an S parameter: either the live PERMITTIVITY parameter or
+    // the output of the permittivity math operation
+    bool isPermittivity();
     unsigned int size() const;
 
     bool isDeembeddingActive();

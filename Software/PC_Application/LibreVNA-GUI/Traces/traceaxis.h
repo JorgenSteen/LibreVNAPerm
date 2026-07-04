@@ -85,6 +85,10 @@ public:
         ImpulseMag,
         Step,
         Impedance,
+        // permittivity options, only for traces carrying eps' + j*eps''
+        // (live PERMITTIVITY parameter or the permittivity math operation)
+        PermittivityReal,
+        PermittivityImag,
         Last,
     };
     YAxis();

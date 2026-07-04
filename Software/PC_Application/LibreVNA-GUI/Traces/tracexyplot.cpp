@@ -1090,6 +1090,12 @@ bool TraceXYPlot::supported(Trace *t, YAxis::Type type)
             return false;
         }
         break;
+    case YAxis::Type::PermittivityReal:
+    case YAxis::Type::PermittivityImag:
+        if(!t->isPermittivity()) {
+            return false;
+        }
+        break;
     default:
         break;
     }

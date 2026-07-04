@@ -809,6 +809,17 @@ bool Trace::isSAParameter(QString param)
     return param.length() == 5 && param.startsWith("PORT") && param[4].isDigit();
 }
 
+bool Trace::isPermittivity()
+{
+    if(source == Source::Live && liveParam == "PERMITTIVITY") {
+        return true;
+    }
+    if(lastMath != this && lastMath->getType() == TraceMath::Type::Permittivity) {
+        return true;
+    }
+    return false;
+}
+
 bool Trace::isVNAParameter(QString param)
 {
     if(param.length() == 3 && param[0] == 'S' && param[1].isDigit() && param[2].isDigit()) {

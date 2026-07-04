@@ -354,6 +354,10 @@ private:
         {&Graphs.defaultAxisLimits.min[(int) YAxis::Type::Step], "Graphs.defaultAxisLimits.Step.min", -1.0},
         {&Graphs.defaultAxisLimits.max[(int) YAxis::Type::Impedance], "Graphs.defaultAxisLimits.Impedance.max", 100.0},
         {&Graphs.defaultAxisLimits.min[(int) YAxis::Type::Impedance], "Graphs.defaultAxisLimits.Impedance.min", 0.0},
+        {&Graphs.defaultAxisLimits.max[(int) YAxis::Type::PermittivityReal], "Graphs.defaultAxisLimits.PermittivityReal.max", 100.0},
+        {&Graphs.defaultAxisLimits.min[(int) YAxis::Type::PermittivityReal], "Graphs.defaultAxisLimits.PermittivityReal.min", 0.0},
+        {&Graphs.defaultAxisLimits.max[(int) YAxis::Type::PermittivityImag], "Graphs.defaultAxisLimits.PermittivityImag.max", 100.0},
+        {&Graphs.defaultAxisLimits.min[(int) YAxis::Type::PermittivityImag], "Graphs.defaultAxisLimits.PermittivityImag.min", 0.0},
 
         {&Marker.defaultBehavior.showDataOnGraphs, "Marker.defaultBehavior.ShowDataOnGraphs", true},
         {&Marker.defaultBehavior.showdB, "Marker.defaultBehavior.showdB", true},

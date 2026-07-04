@@ -119,8 +119,10 @@ double YAxis::sampleToCoordinate(Trace::Data data, Trace *t, unsigned int sample
     case YAxis::Type::VSWR:
         return Util::SparamToVSWR(data.y);
     case YAxis::Type::Real:
+    case YAxis::Type::PermittivityReal: // permittivity traces store eps' + j*eps''
         return data.y.real();
     case YAxis::Type::Imaginary:
+    case YAxis::Type::PermittivityImag:
         return data.y.imag();
     case YAxis::Type::AbsImpedance:
         return abs(Util::SparamToImpedance(data.y, t->getReferenceImpedance()));
@@ -203,6 +205,8 @@ QString YAxis::TypeToName(Type type)
     case Type::ImpulseMag: return "Impulse Response (Magnitude)";
     case Type::Step: return "Step Response";
     case Type::Impedance: return "Impedance";
+    case Type::PermittivityReal: return "Permittivity (ε')";
+    case Type::PermittivityImag: return "Permittivity (ε'')";
     case Type::Last: return "Unknown";
     }
     return "Missing case";
@@ -338,6 +342,8 @@ std::set<YAxis::Type> YAxis::getSupported(XAxis::Type type, TraceModel::DataSour
             ret.insert(YAxis::Type::Inductance);
             ret.insert(YAxis::Type::QualityFactor);
             ret.insert(YAxis::Type::GroupDelay);
+            ret.insert(YAxis::Type::PermittivityReal);
+            ret.insert(YAxis::Type::PermittivityImag);
             break;
         case XAxis::Type::Time:
         case XAxis::Type::Distance:
