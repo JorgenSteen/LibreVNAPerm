@@ -46,6 +46,16 @@ QString Permittivity::description()
     return "Permittivity (bilinear), "+standards+" at "+QString::number(temperature)+"°C, ε* from "+source;
 }
 
+bool Permittivity::initFromProbeSetup()
+{
+    auto setup = ProbeSetup::getCurrent();
+    if(!setup || !setup->getConfig(files, directoryMode, directory, temperature, epsSource)) {
+        return false;
+    }
+    configurationChanged();
+    return true;
+}
+
 void Permittivity::edit()
 {
     auto d = new QDialog();
@@ -86,7 +96,7 @@ void Permittivity::edit()
     connect(ui->browseDirectory, &QPushButton::clicked, [=](){
         QString start = ui->directory->text().isEmpty() ? Preferences::getInstance().UISettings.Paths.data
                                                         : ui->directory->text();
-        auto dir = QFileDialog::getExistingDirectory(nullptr, "Select standards directory", start,
+        auto dir = QFileDialog::getExistingDirectory(d, "Select standards directory", start,
                                                      QFileDialog::ShowDirsOnly | Preferences::QFileDialogOptions());
         if(!dir.isEmpty()) {
             ui->directory->setText(dir);

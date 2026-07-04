@@ -37,6 +37,10 @@ public:
 
     DataType outputType(DataType inputType) override;
     QString description() override;
+    // take the standards/temperature/eps* source from the central probe
+    // setup (Calibration->Probe setup...), returns false if it has no
+    // standards configured
+    bool initFromProbeSetup();
     void edit() override;
     static QWidget *createExplanationWidget();
 

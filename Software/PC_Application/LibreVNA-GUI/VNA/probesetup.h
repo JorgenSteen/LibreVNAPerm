@@ -31,6 +31,10 @@ class ProbeSetup : public QObject, public Savable
     Q_OBJECT
 public:
     ProbeSetup();
+    ~ProbeSetup();
+
+    // the central instance created by the VNA mode, nullptr before it exists
+    static ProbeSetup *getCurrent();
 
     // where the known eps* of the standards comes from
     enum class EpsSource {
@@ -113,6 +117,11 @@ public:
     // probe name must not contain "open"/"short"/"water"/"salt", they would
     // confuse the filename classification).
     bool exportProbe(const QString &destDir, const QString &probeName, const QString &device, QString &error);
+    // Export the configuration in the shape the Permittivity trace math
+    // operation uses (probe mode maps to directory mode over the probe's
+    // library directory). Returns false while no standards are configured.
+    bool getConfig(std::array<QString, 3> &files, bool &directoryMode, QString &directory,
+                   double &temperature, EpsSource &source) const;
     // true if the configured standards can be (and are) loaded
     bool valid();
     // permittivity of a sample with reflection coefficient S11 (linear
@@ -156,6 +165,8 @@ private:
     // per-frequency bilinear coefficients, cached because live sweeps repeat
     // the same frequency grid point by point; invalidated on config change
     std::map<double, PermittivityMath::BilinearCoefficients> coeffCache;
+
+    static ProbeSetup *current;
 };
 
 #endif // PROBESETUP_H

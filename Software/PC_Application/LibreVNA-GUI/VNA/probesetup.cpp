@@ -24,6 +24,8 @@
 
 using namespace std;
 
+ProbeSetup *ProbeSetup::current = nullptr;
+
 ProbeSetup::ProbeSetup()
 {
     mode = Mode::Files;
@@ -31,6 +33,19 @@ ProbeSetup::ProbeSetup()
     epsSource = EpsSource::FileColumns;
     standardsLoaded = false;
     loadFromSettings();
+    current = this;
+}
+
+ProbeSetup::~ProbeSetup()
+{
+    if(current == this) {
+        current = nullptr;
+    }
+}
+
+ProbeSetup *ProbeSetup::getCurrent()
+{
+    return current;
 }
 
 // the directory the standards are resolved from in the non-Files modes
@@ -41,6 +56,20 @@ static QString resolutionDirectory(ProbeSetup::Mode mode, const QString &directo
     case ProbeSetup::Mode::Probe: return probeName.isEmpty() ? QString() : ProbeSetup::probeLibraryDir() + "/" + probeName;
     default: return QString();
     }
+}
+
+bool ProbeSetup::getConfig(std::array<QString, 3> &files, bool &directoryMode, QString &directory,
+                           double &temperature, EpsSource &source) const
+{
+    files = this->files;
+    directoryMode = mode != Mode::Files;
+    directory = resolutionDirectory(mode, this->directory, probeName);
+    temperature = this->temperature;
+    source = epsSource;
+    if(mode == Mode::Files) {
+        return !files[Air].isEmpty() && !files[Water].isEmpty() && !files[Saltwater].isEmpty();
+    }
+    return !directory.isEmpty();
 }
 
 const char *ProbeSetup::standardName(int standard)

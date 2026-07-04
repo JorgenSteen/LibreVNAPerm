@@ -103,6 +103,10 @@ private:
     static QString AxisModeToName(XAxisMode mode);
     static XAxisMode AxisModeFromName(QString name);
     void enableTraceAxis(Trace *t, int axis, bool enabled);
+    // one-click permittivity view: equip the displayed traces with a
+    // permittivity math operation (seeded from the central probe setup)
+    // and switch the axes to eps'/eps''
+    void viewAsPermittivity();
     bool domainMatch(Trace *t);
     bool supported(Trace *t) override;
     bool supported(Trace *t, YAxis::Type type);

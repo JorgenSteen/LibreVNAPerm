@@ -1,6 +1,7 @@
 ﻿#include "tracexyplot.h"
 
 #include "trace.h"
+#include "Math/permittivity.h"
 #include "CustomWidgets/informationbox.h"
 #include "Marker/marker.h"
 #include "xyplotaxisdialog.h"
@@ -368,6 +369,14 @@ void TraceXYPlot::updateContextMenu()
         createMarkerAtPosition(contextmenuClickpoint);
     });
 
+    if(xAxis.getType() == XAxis::Type::Frequency && getModel().getSource() == TraceModel::DataSource::VNA) {
+        auto viewPerm = contextmenu->addAction("View as permittivity");
+        viewPerm->setEnabled(activeTraces);
+        connect(viewPerm, &QAction::triggered, [=](){
+            viewAsPermittivity();
+        });
+    }
+
     for(int axis = 0;axis < 2;axis++) {
         if(yAxis[axis].getType() == YAxis::Type::Disabled) {
             continue;
@@ -396,6 +405,54 @@ void TraceXYPlot::updateContextMenu()
     }
 
     finishContextMenu();
+}
+
+void TraceXYPlot::viewAsPermittivity()
+{
+    // traces currently shown on either axis
+    std::set<Trace*> shown;
+    for(int axis = 0;axis < 2;axis++) {
+        for(auto t : tracesAxis[axis]) {
+            shown.insert(t);
+        }
+    }
+    Math::Permittivity *needsConfig = nullptr;
+    for(auto t : shown) {
+        if(t->isPermittivity()) {
+            continue;
+        }
+        // reuse an already present (but disabled) permittivity operation if there is one
+        Math::Permittivity *perm = nullptr;
+        auto &ops = t->getMathOperations();
+        for(unsigned int i = 1;i < ops.size();i++) {
+            if(ops[i].math->getType() == TraceMath::Type::Permittivity) {
+                perm = static_cast<Math::Permittivity*>(ops[i].math);
+                t->enableMathOperation(i, true);
+                break;
+            }
+        }
+        if(!perm) {
+            perm = new Math::Permittivity();
+            if(!perm->initFromProbeSetup() && !needsConfig) {
+                needsConfig = perm;
+            }
+            t->addMathOperation(perm);
+        }
+        t->enableMath(true);
+    }
+    setYAxis(0, YAxis::Type::PermittivityReal, false, true, YAxis::getDefaultLimitMin(YAxis::Type::PermittivityReal), YAxis::getDefaultLimitMax(YAxis::Type::PermittivityReal), 10, true);
+    setYAxis(1, YAxis::Type::PermittivityImag, false, true, YAxis::getDefaultLimitMin(YAxis::Type::PermittivityImag), YAxis::getDefaultLimitMax(YAxis::Type::PermittivityImag), 10, true);
+    for(auto t : shown) {
+        if(!t->isPermittivity()) {
+            continue;
+        }
+        enableTraceAxis(t, 0, true);
+        enableTraceAxis(t, 1, true);
+    }
+    if(needsConfig) {
+        // no standards configured anywhere yet, ask for them now
+        needsConfig->edit();
+    }
 }
 
 bool TraceXYPlot::positionWithinGraphArea(const QPoint &p)
