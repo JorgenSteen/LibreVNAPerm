@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PermittivityDialog</class>
+ <widget class="QDialog" name="PermittivityDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>420</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Permittivity</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="standardsBox">
+     <property name="title">
+      <string>Calibration standard measurements (S11)</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="airLabel">
+        <property name="text">
+         <string>Open (air):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="TouchstoneImport" name="airFile" native="true"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="waterLabel">
+        <property name="text">
+         <string>Water:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="TouchstoneImport" name="waterFile" native="true"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="saltwaterLabel">
+        <property name="text">
+         <string>Saltwater:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="TouchstoneImport" name="saltwaterFile" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="settingsLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="temperatureLabel">
+       <property name="text">
+        <string>Liquid temperature:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QDoubleSpinBox" name="temperature">
+       <property name="toolTip">
+        <string>Temperature of the standard liquids during their measurement. Used to evaluate the temperature-dependent reference models of water and saltwater.</string>
+       </property>
+       <property name="suffix">
+        <string> °C</string>
+       </property>
+       <property name="decimals">
+        <number>1</number>
+       </property>
+       <property name="minimum">
+        <double>0.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>50.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.500000000000000</double>
+       </property>
+       <property name="value">
+        <double>22.500000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="epsSourceLabel">
+       <property name="text">
+        <string>Known ε* of standards:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="epsSource">
+       <property name="toolTip">
+        <string>Where the known permittivity of the calibration standards comes from: the permittivity columns of the standard files themselves (custom file format), or built-in reference models (air = 1, water: Debye, saltwater 0.9% NaCl: Cole-Cole) evaluated at the configured temperature.</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>File permittivity columns</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Reference models (Debye / Cole-Cole)</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TouchstoneImport</class>
+   <extends>QWidget</extends>
+   <header>CustomWidgets/touchstoneimport.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>PermittivityDialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>PermittivityDialog</receiver>
+   <slot>reject()</slot>
+  </connection>
+ </connections>
+</ui>

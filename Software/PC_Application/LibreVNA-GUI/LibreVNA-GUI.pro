@@ -396,6 +396,7 @@ FORMS += \
     Traces/Math/medianexplanationwidget.ui \
     Traces/Math/medianfilterdialog.ui \
     Traces/Math/newtracemathdialog.ui \
+    Traces/Math/permittivitydialog.ui \
     Traces/Math/permittivityexplanationwidget.ui \
     Traces/Math/tdrdialog.ui \
     Traces/Math/tdrexplanationwidget.ui \

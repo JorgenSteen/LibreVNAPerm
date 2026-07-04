@@ -37,6 +37,7 @@ public:
 
     DataType outputType(DataType inputType) override;
     QString description() override;
+    void edit() override;
     static QWidget *createExplanationWidget();
     nlohmann::json toJSON() override;
     void fromJSON(nlohmann::json j) override;

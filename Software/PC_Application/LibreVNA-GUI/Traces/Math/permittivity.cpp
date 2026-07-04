@@ -2,8 +2,11 @@
 
 #include "touchstone.h"
 #include "unit.h"
+#include "appwindow.h"
+#include "ui_permittivitydialog.h"
 #include "ui_permittivityexplanationwidget.h"
 
+#include <QDialog>
 #include <QWidget>
 #include <cmath>
 #include <fstream>
@@ -15,11 +18,6 @@ using namespace std;
 
 Permittivity::Permittivity()
 {
-    // Stage 1: standards hardcoded to the simulated data set on this machine.
-    // Stage 2 replaces these defaults with an edit dialog.
-    files[Air] = "D:/projects/LibrePermittivity/simulated data/ShortOpen/sim-P1-open.s2p";
-    files[Water] = "D:/projects/LibrePermittivity/simulated data/Water/sim-P1-DI_water-22p5c.s2p";
-    files[Saltwater] = "D:/projects/LibrePermittivity/simulated data/Saltwater/sim-P1-saltwater-22p5c.s2p";
     temperature = 22.5;
     epsSource = EpsSource::FileColumns;
     standardsLoaded = false;
@@ -38,8 +36,40 @@ TraceMath::DataType Permittivity::outputType(TraceMath::DataType inputType)
 
 QString Permittivity::description()
 {
+    if(files[Air].isEmpty() || files[Water].isEmpty() || files[Saltwater].isEmpty()) {
+        return "Permittivity (bilinear), standards not configured";
+    }
     QString source = epsSource == EpsSource::FileColumns ? "file Perm columns" : "reference models";
     return "Permittivity (bilinear), standards at "+QString::number(temperature)+"°C, ε* from "+source;
+}
+
+void Permittivity::edit()
+{
+    auto d = new QDialog();
+    auto ui = new Ui::PermittivityDialog();
+    ui->setupUi(d);
+    connect(d, &QDialog::finished, [=](){
+        delete ui;
+        d->deleteLater();
+    });
+
+    ui->airFile->setFile(files[Air]);
+    ui->waterFile->setFile(files[Water]);
+    ui->saltwaterFile->setFile(files[Saltwater]);
+    ui->temperature->setValue(temperature);
+    ui->epsSource->setCurrentIndex((int) epsSource);
+
+    connect(d, &QDialog::accepted, [=](){
+        files[Air] = ui->airFile->getFilename();
+        files[Water] = ui->waterFile->getFilename();
+        files[Saltwater] = ui->saltwaterFile->getFilename();
+        temperature = ui->temperature->value();
+        epsSource = (EpsSource) ui->epsSource->currentIndex();
+        configurationChanged();
+    });
+    if(AppWindow::showGUI()) {
+        d->show();
+    }
 }
 
 const char *Permittivity::standardName(int standard)
