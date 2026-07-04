@@ -64,6 +64,8 @@ HEADERS += \
     Traces/Math/dft.h \
     Traces/Math/expression.h \
     Traces/Math/medianfilter.h \
+    Traces/Math/permittivity.h \
+    Traces/Math/permittivitymath.h \
     Traces/Math/parser/mpCompat.h \
     Traces/Math/parser/mpDefines.h \
     Traces/Math/parser/mpError.h \
@@ -235,6 +237,8 @@ SOURCES += \
     Traces/Math/dft.cpp \
     Traces/Math/expression.cpp \
     Traces/Math/medianfilter.cpp \
+    Traces/Math/permittivity.cpp \
+    Traces/Math/permittivitymath.cpp \
     Traces/Math/parser/mpError.cpp \
     Traces/Math/parser/mpFuncCmplx.cpp \
     Traces/Math/parser/mpFuncCommon.cpp \
@@ -392,6 +396,7 @@ FORMS += \
     Traces/Math/medianexplanationwidget.ui \
     Traces/Math/medianfilterdialog.ui \
     Traces/Math/newtracemathdialog.ui \
+    Traces/Math/permittivityexplanationwidget.ui \
     Traces/Math/tdrdialog.ui \
     Traces/Math/tdrexplanationwidget.ui \
     Traces/Math/timedomaingatingexplanationwidget.ui \

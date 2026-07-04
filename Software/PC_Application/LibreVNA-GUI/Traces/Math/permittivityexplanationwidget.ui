@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PermittivityExplanationWidget</class>
+ <widget class="QWidget" name="PermittivityExplanationWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>364</width>
+    <height>412</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="widget">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Permittivity&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Computes the complex permittivity ε* = ε′ − jε″ of a material from its measured S11 (frequency domain, e.g. an open-ended coaxial probe immersed in a liquid), using the bilinear (3-standard) calibration method.&lt;/p&gt;&lt;p&gt;At every frequency the S11 → ε* map is a bilinear transformation fixed by three coefficients, which are recovered from three calibration standards with known permittivity: open (air), water and saltwater. The three standard measurements are loaded from touchstone files configured on this operation; the standards' known ε* comes either from the permittivity columns of those files (custom format) or from built-in reference models (air = 1, water: Debye/Kaatze, saltwater 0.9% NaCl: Cole-Cole/Peyman) evaluated at the configured liquid temperature.&lt;/p&gt;&lt;p&gt;The output trace contains ε′ as the real part and ε″ as the (positive) imaginary part. Display the trace in &lt;span style=&quot; font-style:italic;&quot;&gt;Real&lt;/span&gt; and &lt;span style=&quot; font-style:italic;&quot;&gt;Imaginary&lt;/span&gt; format to see both.&lt;/p&gt;&lt;p&gt;The result is only valid inside the frequency range covered by all three standard files; a warning indicates points outside of it or frequencies where the standards are too similar for a reliable calibration.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -5,6 +5,7 @@
 #include "dft.h"
 #include "expression.h"
 #include "timegate.h"
+#include "permittivity.h"
 #include "Traces/trace.h"
 #include "ui_timedomaingatingexplanationwidget.h"
 
@@ -40,6 +41,9 @@ std::vector<TraceMath *> TraceMath::createMath(TraceMath::Type type)
         ret.push_back(new Math::TDR());
         ret.push_back(new Math::TimeGate());
         ret.push_back(new Math::DFT());
+        break;
+    case Type::Permittivity:
+        ret.push_back(new Math::Permittivity());
         break;
     default:
         break;
@@ -80,6 +84,10 @@ TraceMath::TypeInfo TraceMath::getInfo(TraceMath::Type type)
             delete ui;
         });
     }
+        break;
+    case Type::Permittivity:
+        ret.name = "Permittivity";
+        ret.explanationWidget = Math::Permittivity::createExplanationWidget();
         break;
     default:
         break;
