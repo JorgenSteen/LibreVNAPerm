@@ -3,10 +3,14 @@
 #include "touchstone.h"
 #include "unit.h"
 #include "appwindow.h"
+#include "preferences.h"
 #include "ui_permittivitydialog.h"
 #include "ui_permittivityexplanationwidget.h"
 
 #include <QDialog>
+#include <QDirIterator>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QWidget>
 #include <cmath>
 #include <fstream>
@@ -20,7 +24,65 @@ Permittivity::Permittivity()
 {
     temperature = 22.5;
     epsSource = EpsSource::FileColumns;
+    directoryMode = false;
     standardsLoaded = false;
+}
+
+QString Permittivity::temperatureSuffix(double tempC)
+{
+    return QString::number(tempC).replace('.', 'p') + "c";
+}
+
+bool Permittivity::resolveStandardsFromDirectory(const QString &dir, double tempC,
+                                                 std::array<QString, 3> &resolved, QString &error)
+{
+    if(dir.isEmpty()) {
+        error = "No directory configured";
+        return false;
+    }
+    if(!QFileInfo(dir).isDir()) {
+        error = "Not a directory: " + dir;
+        return false;
+    }
+    const QString suffix = temperatureSuffix(tempC);
+    resolved = {QString(), QString(), QString()};
+    QDirIterator it(dir, {"*.s1p", "*.s2p"}, QDir::Files, QDirIterator::Subdirectories);
+    while(it.hasNext()) {
+        const QString path = it.next();
+        const QString base = QFileInfo(path).completeBaseName().toLower();
+        int standard = -1;
+        if(base.contains("salt")) {
+            if(base.endsWith("-" + suffix)) {
+                standard = Saltwater;
+            }
+        } else if(base.contains("water")) {
+            if(base.endsWith("-" + suffix)) {
+                standard = Water;
+            }
+        } else if(base.contains("open") && !base.contains("short")) {
+            standard = Air;
+        }
+        if(standard >= 0) {
+            if(!resolved[standard].isEmpty()) {
+                error = QString("Ambiguous ") + standardName(standard) + " standard: both "
+                        + QFileInfo(resolved[standard]).fileName() + " and " + QFileInfo(path).fileName() + " match";
+                return false;
+            }
+            resolved[standard] = path;
+        }
+    }
+    for(int i = 0; i < 3; i++) {
+        if(resolved[i].isEmpty()) {
+            error = QString("No ") + standardName(i) + " standard found";
+            if(i != Air) {
+                error += " for " + QString::number(tempC) + "°C (filename suffix \"-" + suffix + "\")";
+            }
+            error += " in " + dir;
+            return false;
+        }
+    }
+    error = QString();
+    return true;
 }
 
 TraceMath::DataType Permittivity::outputType(TraceMath::DataType inputType)
@@ -36,11 +98,13 @@ TraceMath::DataType Permittivity::outputType(TraceMath::DataType inputType)
 
 QString Permittivity::description()
 {
-    if(files[Air].isEmpty() || files[Water].isEmpty() || files[Saltwater].isEmpty()) {
+    if(directoryMode ? directory.isEmpty()
+                     : (files[Air].isEmpty() || files[Water].isEmpty() || files[Saltwater].isEmpty())) {
         return "Permittivity (bilinear), standards not configured";
     }
     QString source = epsSource == EpsSource::FileColumns ? "file Perm columns" : "reference models";
-    return "Permittivity (bilinear), standards at "+QString::number(temperature)+"°C, ε* from "+source;
+    QString standards = directoryMode ? "standards from directory" : "standards";
+    return "Permittivity (bilinear), "+standards+" at "+QString::number(temperature)+"°C, ε* from "+source;
 }
 
 void Permittivity::edit()
@@ -58,11 +122,47 @@ void Permittivity::edit()
     ui->saltwaterFile->setFile(files[Saltwater]);
     ui->temperature->setValue(temperature);
     ui->epsSource->setCurrentIndex((int) epsSource);
+    ui->individualMode->setChecked(!directoryMode);
+    ui->directoryModeButton->setChecked(directoryMode);
+    ui->modeStack->setCurrentIndex(directoryMode ? 1 : 0);
+    ui->directory->setText(directory);
+
+    connect(ui->individualMode, &QRadioButton::toggled, [=](bool checked) {
+        ui->modeStack->setCurrentIndex(checked ? 0 : 1);
+    });
+    // live preview of the files the directory + temperature resolve to
+    auto updatePreview = [=](){
+        std::array<QString, 3> resolved;
+        QString err;
+        if(resolveStandardsFromDirectory(ui->directory->text(), ui->temperature->value(), resolved, err)) {
+            ui->resolvedPreview->setText("Open (air): "+QFileInfo(resolved[Air]).fileName()
+                    +"\nWater: "+QFileInfo(resolved[Water]).fileName()
+                    +"\nSaltwater: "+QFileInfo(resolved[Saltwater]).fileName());
+        } else {
+            ui->resolvedPreview->setText(err);
+        }
+    };
+    connect(ui->directory, &QLineEdit::textChanged, updatePreview);
+    connect(ui->temperature, qOverload<double>(&QDoubleSpinBox::valueChanged), updatePreview);
+    connect(ui->browseDirectory, &QPushButton::clicked, [=](){
+        QString start = ui->directory->text().isEmpty() ? Preferences::getInstance().UISettings.Paths.data
+                                                        : ui->directory->text();
+        auto dir = QFileDialog::getExistingDirectory(nullptr, "Select standards directory", start,
+                                                     QFileDialog::ShowDirsOnly | Preferences::QFileDialogOptions());
+        if(!dir.isEmpty()) {
+            ui->directory->setText(dir);
+        }
+    });
+    updatePreview();
 
     connect(d, &QDialog::accepted, [=](){
-        files[Air] = ui->airFile->getFilename();
-        files[Water] = ui->waterFile->getFilename();
-        files[Saltwater] = ui->saltwaterFile->getFilename();
+        directoryMode = ui->directoryModeButton->isChecked();
+        directory = ui->directory->text();
+        if(!directoryMode) {
+            files[Air] = ui->airFile->getFilename();
+            files[Water] = ui->waterFile->getFilename();
+            files[Saltwater] = ui->saltwaterFile->getFilename();
+        }
         temperature = ui->temperature->value();
         epsSource = (EpsSource) ui->epsSource->currentIndex();
         configurationChanged();
@@ -150,6 +250,9 @@ bool Permittivity::loadStandards()
     for(int i = 0; i < 3; i++) {
         standards[i].gamma.clear();
         standards[i].perm.clear();
+    }
+    if(directoryMode && !resolveStandardsFromDirectory(directory, temperature, files, loadError)) {
+        return false;
     }
     for(int i = 0; i < 3; i++) {
         if(files[i].isEmpty()) {
@@ -322,6 +425,8 @@ nlohmann::json Permittivity::toJSON()
     j["saltwaterFile"] = files[Saltwater].toStdString();
     j["temperature"] = temperature;
     j["epsSource"] = epsSource == EpsSource::FileColumns ? "fileColumns" : "models";
+    j["directoryMode"] = directoryMode;
+    j["directory"] = directory.toStdString();
     return j;
 }
 
@@ -332,5 +437,7 @@ void Permittivity::fromJSON(nlohmann::json j)
     files[Saltwater] = QString::fromStdString(j.value("saltwaterFile", files[Saltwater].toStdString()));
     temperature = j.value("temperature", 22.5);
     epsSource = j.value("epsSource", string("fileColumns")) == string("models") ? EpsSource::Models : EpsSource::FileColumns;
+    directoryMode = j.value("directoryMode", false);
+    directory = QString::fromStdString(j.value("directory", ""));
     configurationChanged();
 }

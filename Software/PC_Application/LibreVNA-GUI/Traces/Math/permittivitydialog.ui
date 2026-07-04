@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>420</height>
+    <width>520</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,42 +15,134 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="standardsBox">
-     <property name="title">
-      <string>Calibration standard measurements (S11)</string>
-     </property>
-     <layout class="QFormLayout" name="formLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="airLabel">
-        <property name="text">
-         <string>Open (air):</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="TouchstoneImport" name="airFile" native="true"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="waterLabel">
-        <property name="text">
-         <string>Water:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="TouchstoneImport" name="waterFile" native="true"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="saltwaterLabel">
-        <property name="text">
-         <string>Saltwater:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="TouchstoneImport" name="saltwaterFile" native="true"/>
-      </item>
-     </layout>
+    <layout class="QHBoxLayout" name="modeLayout">
+     <item>
+      <widget class="QRadioButton" name="individualMode">
+       <property name="text">
+        <string>Select files individually</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="directoryModeButton">
+       <property name="toolTip">
+        <string>Point at a directory containing the standard measurements for all temperatures. The files matching the configured temperature are selected automatically by filename.</string>
+       </property>
+       <property name="text">
+        <string>From directory</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QStackedWidget" name="modeStack">
+     <widget class="QWidget" name="filesPage">
+      <layout class="QVBoxLayout" name="filesPageLayout">
+       <item>
+        <widget class="QGroupBox" name="standardsBox">
+         <property name="title">
+          <string>Calibration standard measurements (S11)</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="airLabel">
+            <property name="text">
+             <string>Open (air):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="TouchstoneImport" name="airFile" native="true"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="waterLabel">
+            <property name="text">
+             <string>Water:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="TouchstoneImport" name="waterFile" native="true"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="saltwaterLabel">
+            <property name="text">
+             <string>Saltwater:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="TouchstoneImport" name="saltwaterFile" native="true"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="directoryPage">
+      <layout class="QVBoxLayout" name="directoryPageLayout">
+       <item>
+        <widget class="QGroupBox" name="directoryBox">
+         <property name="title">
+          <string>Standards directory</string>
+         </property>
+         <layout class="QVBoxLayout" name="directoryBoxLayout">
+          <item>
+           <layout class="QHBoxLayout" name="directoryLayout">
+            <item>
+             <widget class="QLineEdit" name="directory">
+              <property name="toolTip">
+               <string>Directory (searched including subdirectories) containing the standard measurement files. Filenames must contain "open" (air standard), "water" and "salt(water)", with a temperature suffix like "-22p5c" (= 22.5 °C) for the temperature-dependent liquids.</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="browseDirectory">
+              <property name="maximumSize">
+               <size>
+                <width>30</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="resolvedPreview">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="directorySpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>10</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -65,7 +157,7 @@
      <item row="0" column="1">
       <widget class="QDoubleSpinBox" name="temperature">
        <property name="toolTip">
-        <string>Temperature of the standard liquids during their measurement. Used to evaluate the temperature-dependent reference models of water and saltwater.</string>
+        <string>Temperature of the standard liquids during their measurement. Used to evaluate the temperature-dependent reference models of water and saltwater, and to select the matching files in directory mode.</string>
        </property>
        <property name="suffix">
         <string> °C</string>

@@ -39,6 +39,16 @@ public:
     QString description() override;
     void edit() override;
     static QWidget *createExplanationWidget();
+
+    // Directory mode: find the three standard files in a directory (searched
+    // recursively) by filename convention. The air standard contains "open"
+    // (but not "short") in its name; water/saltwater contain "water" /
+    // "salt" and must carry a temperature suffix matching tempC, e.g.
+    // "-22p5c" for 22.5 degrees. Returns false and sets error on failure.
+    static bool resolveStandardsFromDirectory(const QString &dir, double tempC,
+                                              std::array<QString, 3> &resolved, QString &error);
+    // temperature -> filename suffix, e.g. 22.5 -> "22p5c", 10 -> "10c"
+    static QString temperatureSuffix(double tempC);
     nlohmann::json toJSON() override;
     void fromJSON(nlohmann::json j) override;
     Type getType() override {return Type::Permittivity;}
@@ -68,6 +78,9 @@ private:
     std::array<QString, 3> files;
     double temperature; // liquid temperature of the standards, degrees Celsius
     EpsSource epsSource;
+    // directory mode: files[] is filled by resolving directory + temperature
+    bool directoryMode;
+    QString directory;
 
     std::array<Standard, 3> standards;
     bool standardsLoaded;
