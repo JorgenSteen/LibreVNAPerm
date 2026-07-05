@@ -155,6 +155,7 @@ HEADERS += \
     VNA/Deembedding/portextension.h \
     VNA/Deembedding/twothru.h \
     VNA/probesetup.h \
+    VNA/sampleacquisition.h \
     VNA/tracewidgetvna.h \
     VNA/vna.h \
     about.h \
@@ -316,6 +317,7 @@ SOURCES += \
     VNA/Deembedding/portextension.cpp \
     VNA/Deembedding/twothru.cpp \
     VNA/probesetup.cpp \
+    VNA/sampleacquisition.cpp \
     VNA/tracewidgetvna.cpp \
     VNA/vna.cpp \
     about.cpp \

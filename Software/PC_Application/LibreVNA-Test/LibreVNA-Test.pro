@@ -147,6 +147,7 @@ SOURCES +=  \
     ../LibreVNA-GUI/VNA/Deembedding/portextension.cpp \
     ../LibreVNA-GUI/VNA/Deembedding/twothru.cpp \
     ../LibreVNA-GUI/VNA/probesetup.cpp \
+    ../LibreVNA-GUI/VNA/sampleacquisition.cpp \
     ../LibreVNA-GUI/VNA/tracewidgetvna.cpp \
     ../LibreVNA-GUI/VNA/vna.cpp \
     ../LibreVNA-GUI/about.cpp \
@@ -356,6 +357,7 @@ HEADERS += \
     ../LibreVNA-GUI/VNA/Deembedding/portextension.h \
     ../LibreVNA-GUI/VNA/Deembedding/twothru.h \
     ../LibreVNA-GUI/VNA/probesetup.h \
+    ../LibreVNA-GUI/VNA/sampleacquisition.h \
     ../LibreVNA-GUI/VNA/tracewidgetvna.h \
     ../LibreVNA-GUI/VNA/vna.h \
     ../LibreVNA-GUI/about.h \

@@ -89,6 +89,31 @@ bool Averaging::settled()
     return getLevel() == averages;
 }
 
+double Averaging::maxScatter() const
+{
+    double worst = 0.0;
+    for(const auto &point : avg) {
+        if(point.size() < 2) {
+            continue;
+        }
+        auto values = point.front().size();
+        for(unsigned int i=0;i<values;i++) {
+            complex<double> mean = 0.0;
+            for(const auto &sweep : point) {
+                mean += sweep[i];
+            }
+            mean /= (double) point.size();
+            double var = 0.0;
+            for(const auto &sweep : point) {
+                var += norm(sweep[i] - mean);
+            }
+            var /= (double) point.size();
+            worst = max(worst, sqrt(var));
+        }
+    }
+    return worst;
+}
+
 Averaging::Mode Averaging::getMode() const
 {
     return mode;

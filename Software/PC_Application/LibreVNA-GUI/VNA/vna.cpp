@@ -68,6 +68,11 @@ VNA::VNA(AppWindow *window, QString name)
     calMeasuring = false;
     calWaitFirst = false;
     calDialog = nullptr;
+    sampleAcq = new SampleAcquisition(this);
+    connect(this, &VNA::sweepStopped, this, [=](){
+        sampleAcq->sweepFinished(average.settled(), average.maxScatter(), averages,
+                                 window->getDevice() ? window->getDevice()->getSerial() : QString());
+    });
 
     lastFreq = 0.0;
     lastPower = 0.0;
@@ -496,6 +501,8 @@ VNA::VNA(AppWindow *window, QString name)
         UpdateAverageCount();
     });
     tb_acq->addWidget(bResetAvg);
+    tb_acq->addSeparator();
+    tb_acq->addWidget(sampleAcq->createToolWidget());
 
     window->addToolBar(tb_acq);
     toolbars.insert(tb_acq);
@@ -1092,6 +1099,10 @@ void VNA::NewDatapoint(DeviceDriver::VNAMeasurement m)
         window->addStreamingData(m_avg, AppWindow::VNADataType::Deembedded, settings.zerospan);
         traceModel.addVNAData(m_avg, type, true);
     }
+
+    // one-click sample acquisition collects the final per-point state
+    // (averaged, calibrated, de-embedded if active)
+    sampleAcq->addDatapoint(m_avg);
 
 
     emit dataChanged();
@@ -1981,6 +1992,17 @@ void VNA::SetSingleSweep(bool single)
             Run();
         }
     }
+}
+
+bool VNA::restartSingleSweep()
+{
+    if(CalibrationMeasurementActive()) {
+        return false;
+    }
+    singleSweep = true;
+    emit singleSweepChanged(true);
+    Run();
+    return true;
 }
 
 void VNA::Run()

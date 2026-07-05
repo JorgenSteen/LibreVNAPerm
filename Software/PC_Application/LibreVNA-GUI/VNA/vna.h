@@ -9,6 +9,7 @@
 #include "tracewidgetvna.h"
 #include "Calibration/calibration.h"
 #include "probesetup.h"
+#include "sampleacquisition.h"
 
 #include <QObject>
 #include <QWidget>
@@ -45,6 +46,11 @@ public:
     QList<QAction*> getExportOptions() override { return exportActions;}
 
     ProbeSetup &getProbeSetup() { return probeSetup;}
+    SampleAcquisition *getSampleAcquisition() { return sampleAcq;}
+    // (Re)starts a single sweep with a full traces/averaging reset, used by
+    // the one-click sample acquisition. Returns false while a calibration
+    // measurement is in progress.
+    bool restartSingleSweep();
 
     enum class SweepType {
         Frequency = 0,
@@ -170,6 +176,8 @@ private:
     Calibration cal;
     // Dielectric probe configuration (permittivity measurements)
     ProbeSetup probeSetup;
+    // One-click sample acquisition (owned via QObject parent)
+    SampleAcquisition *sampleAcq;
     bool changingSettings;
     std::set<CalibrationMeasurement::Base*> calMeasurements;
     bool calMeasuring;

@@ -6,6 +6,7 @@
 #include "CustomWidgets/informationbox.h"
 #include "ui_probesetupdialog.h"
 
+#include <QDateTime>
 #include <QDialog>
 #include <QDirIterator>
 #include <QFile>
@@ -564,6 +565,56 @@ bool ProbeSetup::writeStandardFile(const QString &path, int standard, double tem
         // Perm_Imag is stored positive in the file (internally eps* = eps' - j*eps'')
         file << QString::asprintf("%.9E\t%.9E\t%.9E\t%.9E\t%.9E\t0\t0\t0\t0\n",
                                   g.x, g.y.real(), g.y.imag(), eps.real(), -eps.imag()).toStdString();
+    }
+    if(!file.good()) {
+        error = "Write error on "+path;
+        return false;
+    }
+    return true;
+}
+
+bool ProbeSetup::writeSampleFile(const QString &path, const QString &sampleName,
+                                 const QString &device, double tempC,
+                                 unsigned int averagedSweeps, double sweepScatter,
+                                 const std::vector<TraceMath::Data> &gamma,
+                                 const std::vector<TraceMath::Data> &perm,
+                                 QString &error)
+{
+    if(gamma.empty()) {
+        error = "No sample data to write";
+        return false;
+    }
+    ofstream file(path.toStdString());
+    if(!file.is_open()) {
+        error = "Unable to create "+path;
+        return false;
+    }
+    QString header;
+    header += "! LibreVNA sample measurement\n";
+    header += "! Sample: "+sampleName+"\n";
+    if(!device.isEmpty()) {
+        header += "! Device: "+device+"\n";
+    }
+    if(!isnan(tempC)) {
+        header += "! Temperature: "+QString::number(tempC)+"\n";
+    }
+    header += "! Timestamp: "+QDateTime::currentDateTime().toString(Qt::ISODate)+"\n";
+    header += "! Averages: "+QString::number(averagedSweeps)+"\n";
+    header += "! SweepScatter: "+QString::number(sweepScatter, 'E', 3)+"\n";
+    header += "! S-Parameter data: F S11 e\n";
+    header += "!   Frequency\tS11_Real\tS11_Imag\tPerm_Real\tPerm_Imag\tUnused\tUnused\tUnused\tUnused\n";
+    header += "# Hz S RI R 50\n";
+    file << header.toStdString();
+    for(unsigned int i=0;i<gamma.size();i++) {
+        // perm is display convention eps' + j*eps'', written unchanged
+        // (Perm_Imag stored positive in the file, like the standard files)
+        complex<double> eps = 0.0;
+        if(i < perm.size() && !isnan(perm[i].y.real())) {
+            eps = perm[i].y;
+        }
+        file << QString::asprintf("%.9E\t%.9E\t%.9E\t%.9E\t%.9E\t0\t0\t0\t0\n",
+                                  gamma[i].x, gamma[i].y.real(), gamma[i].y.imag(),
+                                  eps.real(), eps.imag()).toStdString();
     }
     if(!file.good()) {
         error = "Write error on "+path;

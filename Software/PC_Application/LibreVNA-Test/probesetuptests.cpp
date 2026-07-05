@@ -340,3 +340,111 @@ void ProbeSetupTests::livePermittivityParameter()
     QVERIFY2(std::abs(maeRe - 0.6472) <= maeTolerance, qPrintable(QString::number(maeRe)));
     QVERIFY2(std::abs(maeIm - 0.7541) <= maeTolerance, qPrintable(QString::number(maeIm)));
 }
+
+void ProbeSetupTests::oneClickSampleAcquisition()
+{
+    // End-to-end test of the one-click sample acquisition: arm it, stream
+    // two averaged sweeps through VNA::NewDatapoint as if they came from a
+    // device and verify that the auto-stop writes a valid augmented sample
+    // file with the golden permittivity numbers.
+    auto window = new AppWindow;
+    auto cleanup = qScopeGuard([&](){ delete window; });
+
+    if(window->getDevice()) {
+        QMetaObject::invokeMethod(window, "DisconnectDevice", Qt::DirectConnection);
+        QTest::qWait(100);
+    }
+
+    auto vna = dynamic_cast<VNA*>(window->getModeHandler()->findFirstOfType(Mode::Type::VNA));
+    QVERIFY(vna);
+
+    QStringList output;
+    auto conn = connect(window->getSCPI(), &SCPI::output, [&](QString line){
+        output.append(line);
+    });
+    auto connCleanup = qScopeGuard([&](){ disconnect(conn); });
+    auto command = [&](const QString &cmd){
+        window->getSCPI()->input(cmd);
+        QTest::qWait(20);
+    };
+
+    auto samplePath = dataDir + "/Water/sim-P1-DI_water-30c.s2p";
+    auto sample = Touchstone::fromFile(samplePath.toStdString());
+    QVERIFY(sample.points() > 0);
+
+    command(":VNA:ACQ:POINTS "+QString::number(sample.points()));
+    command(":VNA:ACQ:AVG 2");
+    QTest::qWait(300);
+
+    vna->getProbeSetup().fromJSON(probeConfig(dataDir, 22.5, "fileColumns", false));
+    QVERIFY2(vna->getProbeSetup().valid(), qPrintable(vna->getProbeSetup().getLastError()));
+
+    QTemporaryDir tmp;
+    QVERIFY(tmp.isValid());
+    auto acq = vna->getSampleAcquisition();
+    QVERIFY(acq->arm(tmp.path(), "unittest-water30"));
+    QCOMPARE((int) acq->getState(), (int) SampleAcquisition::State::Armed);
+
+    auto feedSweep = [&](){
+        for(unsigned int i = 0; i < sample.points(); i++) {
+            DeviceDriver::VNAMeasurement m;
+            m.pointNum = i;
+            m.Z0 = 50.0;
+            m.frequency = sample.point(i).frequency;
+            m.dBm = -10.0;
+            m.measurements["S11"] = sample.point(i).S[0];
+            QMetaObject::invokeMethod(vna, "NewDatapoint", Qt::DirectConnection,
+                                      Q_ARG(DeviceDriver::VNAMeasurement, m));
+        }
+        QTest::qWait(100);
+    };
+
+    // two full sweeps settle the averaging (still Armed afterwards), the
+    // next incoming point triggers the single-sweep auto-stop
+    feedSweep();
+    QCOMPARE((int) acq->getState(), (int) SampleAcquisition::State::Armed);
+    feedSweep();
+    DeviceDriver::VNAMeasurement extra;
+    extra.pointNum = 0;
+    extra.Z0 = 50.0;
+    extra.frequency = sample.point(0).frequency;
+    extra.dBm = -10.0;
+    extra.measurements["S11"] = sample.point(0).S[0];
+    QMetaObject::invokeMethod(vna, "NewDatapoint", Qt::DirectConnection,
+                              Q_ARG(DeviceDriver::VNAMeasurement, extra));
+    QTest::qWait(200);
+
+    QVERIFY2((int) acq->getState() == (int) SampleAcquisition::State::Done,
+             qPrintable("state not Done: "+acq->getLastError()));
+    auto path = acq->getLastFile();
+    QVERIFY(QFileInfo::exists(path));
+
+    // still a valid touchstone file with the sample's S11
+    auto written = Touchstone::fromFile(path.toStdString());
+    QCOMPARE(written.points(), sample.points());
+    for(unsigned int i = 0; i < written.points(); i++) {
+        QVERIFY(std::abs(written.point(i).S[0] - sample.point(i).S[0]) < 1e-9);
+    }
+
+    // metadata
+    auto meta = ProbeSetup::readMetadata(path);
+    QCOMPARE(meta["Sample"], QString("unittest-water30"));
+    QCOMPARE(meta["Averages"], QString("2"));
+    QVERIFY(meta.count("Timestamp"));
+
+    // permittivity columns must match the golden numbers (the file stores
+    // Perm_Imag positive, loadPermColumns returns eps' - j*eps'')
+    std::vector<TraceMath::Data> written_eps, truth;
+    QVERIFY(ProbeSetup::loadPermColumns(path, written_eps));
+    QVERIFY(ProbeSetup::loadPermColumns(samplePath, truth));
+    QCOMPARE(written_eps.size(), truth.size());
+    double maeRe = 0.0, maeIm = 0.0;
+    for(unsigned int i = 0; i < truth.size(); i++) {
+        maeRe += std::abs(written_eps[i].y.real() - truth[i].y.real());
+        maeIm += std::abs(written_eps[i].y.imag() - truth[i].y.imag());
+    }
+    maeRe /= truth.size();
+    maeIm /= truth.size();
+    QVERIFY2(std::abs(maeRe - 0.6472) <= maeTolerance, qPrintable(QString::number(maeRe)));
+    QVERIFY2(std::abs(maeIm - 0.7541) <= maeTolerance, qPrintable(QString::number(maeIm)));
+}

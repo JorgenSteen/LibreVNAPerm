@@ -28,6 +28,11 @@ public:
     unsigned int currentSweep();
     // Returns true if all required averages have been taken
     bool settled();
+    // Largest standard deviation (magnitude) of the stored per-sweep values
+    // around their mean, over all points and measurements. A measure of the
+    // sweep-to-sweep repeatability of the current averaging window; 0.0 while
+    // fewer than two sweeps are stored.
+    double maxScatter() const;
     Mode getMode() const;
     void setMode(const Mode &value);
 

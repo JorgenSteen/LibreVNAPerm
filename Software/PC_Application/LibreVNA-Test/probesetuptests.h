@@ -22,6 +22,7 @@ private slots:
     void exportRoundtrip();
     void probeLibraryImport();
     void livePermittivityParameter();
+    void oneClickSampleAcquisition();
 
 private:
     QString dataDir;

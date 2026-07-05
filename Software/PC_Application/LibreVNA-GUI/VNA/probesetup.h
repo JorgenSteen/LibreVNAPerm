@@ -117,6 +117,18 @@ public:
     // probe name must not contain "open"/"short"/"water"/"salt", they would
     // confuse the filename classification).
     bool exportProbe(const QString &destDir, const QString &probeName, const QString &device, QString &error);
+    // Write a SAMPLE measurement as an augmented Touchstone .s2p in the same
+    // column layout as the standard files. perm is in the DISPLAY convention
+    // (eps' + j*eps'', as returned by compute()); its values are written to
+    // the Perm columns unchanged (Perm_Imag stored positive). perm may be
+    // empty or contain NaN entries (no probe setup / out of coverage) -- such
+    // rows get zero Perm columns. tempC NaN omits the temperature line.
+    static bool writeSampleFile(const QString &path, const QString &sampleName,
+                                const QString &device, double tempC,
+                                unsigned int averagedSweeps, double sweepScatter,
+                                const std::vector<TraceMath::Data> &gamma,
+                                const std::vector<TraceMath::Data> &perm,
+                                QString &error);
     // Export the configuration in the shape the Permittivity trace math
     // operation uses (probe mode maps to directory mode over the probe's
     // library directory). Returns false while no standards are configured.
